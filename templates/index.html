@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Soccer Betting App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <main class="page">
+      <section class="card">
+        <header>
+          <p class="eyebrow">Matchday Picks</p>
+          <h1>Soccer Betting</h1>
+          <p class="subhead">Choose a fixed bet amount and submit.</p>
+        </header>
+
+        {% if message %}
+          <div class="message">{{ message }}</div>
+        {% endif %}
+
+        <form method="post" class="bet-form">
+          <label for="bet" class="label">Bet amount</label>
+          <div class="select-wrap">
+            <select id="bet" name="bet" required>
+              <option value="" disabled {% if not selected %}selected{% endif %}>Select amount</option>
+              {% for amount in allowed_bets %}
+                <option value="{{ amount }}" {% if selected == amount %}selected{% endif %}>
+                  ${{ amount }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit">Place Bet</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

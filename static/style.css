@@ -1,0 +1,106 @@
+:root {
+  --bg-start: #f6f1e7;
+  --bg-end: #e7efe4;
+  --card: #fffdf7;
+  --text: #1f2a2e;
+  --accent: #c75b39;
+  --accent-dark: #8f3a20;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Georgia", "Times New Roman", serif;
+  color: var(--text);
+  background: radial-gradient(circle at top, var(--bg-start), var(--bg-end));
+}
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+}
+
+.card {
+  width: min(520px, 100%);
+  background: var(--card);
+  padding: 32px;
+  border-radius: 20px;
+  box-shadow: 0 18px 40px rgba(31, 42, 46, 0.12);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 12px;
+  margin: 0 0 8px 0;
+  color: var(--accent-dark);
+}
+
+h1 {
+  margin: 0 0 8px 0;
+  font-size: 36px;
+}
+
+.subhead {
+  margin: 0 0 24px 0;
+  color: rgba(31, 42, 46, 0.7);
+}
+
+.message {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(199, 91, 57, 0.12);
+  color: var(--accent-dark);
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.bet-form {
+  display: grid;
+  gap: 16px;
+}
+
+.label {
+  font-weight: 600;
+}
+
+.select-wrap select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 42, 46, 0.2);
+  font-size: 16px;
+  background: #fff;
+}
+
+button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(199, 91, 57, 0.3);
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 24px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+}
