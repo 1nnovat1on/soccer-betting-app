@@ -1,0 +1,261 @@
+Here’s what you should send the dev team as a **single “Build Spec”** for BLITZR (Python Flask + HTML). It’s written to turn your ideas into **requirements, screens, data, and tasks**.
+
+---
+
+## 1) One-sentence product definition
+
+**BLITZR = World Cup–focused soccer betting app where users pick (Win/Lose/Tie) per match and stake $0–$100, with live-updating potential payout.**
+
+**MVP goal:** get from QR login → ID check → wallet funded → place bet → see bet slip + outcomes/payouts → settle.
+
+---
+
+## 2) MVP scope (what we are building first)
+
+### Core flows (must work end-to-end)
+
+1. **QR Code Login / Account Start**
+
+* Landing page shows QR code (or “Scan to login” concept)
+* If web-only MVP: QR can deep-link to `/login` with token OR just be a “fast login” gimmick for now
+
+2. **User Registration + Auth**
+
+* Username, password (hashed), email/phone optional
+* Sessions/JWT (decide one)
+* Password reset (basic)
+
+3. **ID Check (KYC)**
+
+* A “KYC status” gate before enabling deposits/withdrawals and placing bets
+* Start with a stub flow (upload ID selfie + ID image) OR integrate a KYC vendor later
+* States: `NOT_STARTED / PENDING / VERIFIED / REJECTED`
+
+4. **Wallet (Deposits/Withdrawals)**
+
+* For MVP, choose:
+
+  * **Option A (fastest):** “play money” wallet (demo) to validate product
+  * **Option B:** real payments via Stripe-like provider
+  * **Option C:** crypto payments (phase 2 unless you already have infra)
+* Always track a ledger (append-only transactions)
+
+5. **Matches List (World Cup focus)**
+
+* Show upcoming matches grouped: **Group A, Group B, …**
+* Each match card: teams, kickoff time (local), status, basic odds or implied payout
+
+6. **Bet Placement**
+
+* Bet type for MVP: **Match Result = WIN/LOSE/TIE**
+* Stake: **$0–$100** slider/input
+* User picks exactly one outcome per match
+* Show “Potential Return” that updates instantly
+
+7. **My Bets**
+
+* View open bets, settled bets, returns
+* Status: `OPEN / WON / LOST / PUSH / VOID / CANCELED`
+
+8. **Settlement**
+
+* Pull final scores from SportRadar
+* Automatically settle bets (background job)
+
+---
+
+## 3) Phase 2+ (explicitly out of MVP)
+
+* Parlays, handicap, props, live betting
+* Social features, referral codes, bonuses
+* Streaming
+* Crypto deposits/withdrawals (unless you pick it for MVP)
+* “Wild Card” categories (best upcoming star / biggest shocker) — likely needs custom markets + rules + settlement logic
+
+---
+
+## 4) Screens & UI requirements (what dev should build)
+
+### Pages (web)
+
+1. **Landing / QR Login**
+2. **Register**
+3. **Login**
+4. **KYC (ID Check)**
+5. **Wallet**
+
+   * Balance, deposit, withdraw, transaction history
+6. **Matches**
+
+   * Tabs: Groups A–H (or tournament stages)
+   * Match card → bet modal
+7. **Bet Slip / Confirm**
+8. **My Bets**
+9. **Admin (internal)**
+
+   * Manage matches cache, view users, KYC status overrides (if allowed), manual settlement tools, audit logs
+
+### UI rules
+
+* Mobile-first responsive HTML
+* Fast: pages should load in <2s on average
+* Clear states: “KYC required”, “Insufficient funds”, “Bet locked after kickoff”
+* Live updating “Potential Return” (client-side calc)
+
+---
+
+## 5) Betting + payout logic (dev needs this clarified)
+
+You must choose **one** of these models for MVP:
+
+### Model 1: “Fixed payout multiplier” (simplest)
+
+* Each outcome has a multiplier (e.g., Win 1.8x, Tie 3.2x, Lose 2.4x)
+* Return = stake * multiplier
+* Multipliers come from SportRadar odds (or your own simple rules)
+
+### Model 2: “Points / leaderboard” (if avoiding real-money complexity early)
+
+* Stake is points (0–100)
+* Earn points based on correctness + upset bonus
+* Great for MVP demo + avoids payments/legal complexity until later
+
+**Tell dev team which one you want for MVP.** If you don’t decide, they can’t implement settlement correctly.
+
+---
+
+## 6) Data + API integration (SportRadar)
+
+### What we pull
+
+* Tournament schedule (World Cup)
+* Match status + kickoff times
+* Odds (if available under your plan)
+* Final results for settlement
+
+### What we store (cache locally)
+
+* `matches` table with SportRadar IDs
+* `teams` table
+* `odds` table (versioned snapshots recommended)
+* Don’t call SportRadar on every page load—use a cache + refresh job
+
+### Update cadence
+
+* Schedule refresh: every 6–12 hours
+* Upcoming match status: every 1–5 minutes (more frequently near kickoff)
+* Settlement check: every 1–5 minutes for matches in “complete” state
+
+---
+
+## 7) Backend architecture (Flask)
+
+### Recommended structure
+
+* Flask app + Blueprints (`auth`, `kyc`, `wallet`, `matches`, `bets`, `admin`)
+* DB: Postgres (preferred) or MySQL
+* ORM: SQLAlchemy
+* Migrations: Alembic
+* Background jobs: Celery + Redis (or RQ) for odds refresh + settlement
+* Templates: Jinja2 for MVP (or keep HTML simple + fetch JSON endpoints)
+
+### Key endpoints (example)
+
+* `POST /api/auth/register`
+* `POST /api/auth/login`
+* `GET /api/matches?group=A`
+* `POST /api/bets` (match_id, outcome, stake)
+* `GET /api/bets/mine`
+* `POST /api/wallet/deposit` (MVP: fake or provider)
+* `POST /api/wallet/withdraw`
+* `POST /api/kyc/submit`
+* `GET /api/kyc/status`
+
+---
+
+## 8) Database tables (minimum)
+
+* `users` (id, username, password_hash, created_at, last_login)
+* `kyc` (user_id, status, submitted_at, verified_at, metadata_json)
+* `wallet_accounts` (user_id, currency, balance_cached)
+* `wallet_ledger` (id, user_id, type, amount, created_at, reference, status)
+* `matches` (id, sportradar_id, group, home_team, away_team, kickoff, status, score_json)
+* `odds_snapshots` (id, match_id, captured_at, odds_json)
+* `bets` (id, user_id, match_id, outcome, stake, potential_return, placed_at, status, settled_at, payout)
+
+**Important:** wallet must be ledger-based to avoid “balance desync” nightmares.
+
+---
+
+## 9) Security & integrity requirements
+
+* Password hashing (bcrypt/argon2), never plain text
+* Rate limiting on auth endpoints
+* Input validation everywhere
+* Audit logs for: deposits, withdrawals, bet placement, settlement actions
+* Prevent betting after kickoff (server-side enforcement)
+* Anti-tamper: potential_return should be recomputed server-side on bet placement
+
+---
+
+## 10) Compliance / legal (what dev needs to build, not legal advice)
+
+Even if legal is handled by counsel, engineering should support:
+
+* Age gate + KYC status gate
+* Responsible gambling hooks (phase 2):
+
+  * deposit limits, cooling-off, self-exclusion
+* Clear Terms/Privacy placeholders in UI
+* Region gating capability (IP-based) if required later
+
+*(You’ll want a lawyer for licensing/jurisdiction. Dev team just needs the app to support these constraints.)*
+
+---
+
+## 11) Team deliverables & workflow
+
+### Deliverables
+
+* Repo with:
+
+  * Flask backend
+  * HTML templates (or static frontend) + minimal JS
+  * Docker setup
+  * DB migrations
+  * Seed script for tournament/groups
+* Environments:
+
+  * local dev
+  * staging
+  * production
+
+### Definition of done (MVP)
+
+* A new user can:
+
+  1. create account
+  2. complete KYC (or be marked verified in demo)
+  3. deposit funds (demo or real)
+  4. place a bet (win/lose/tie, $0–$100)
+  5. see “my bets”
+  6. after match completes, bet auto-settles and wallet updates
+
+---
+
+## 12) Open decisions you must answer (so devs don’t guess)
+
+Send these as “product decisions”:
+
+1. **Real money or demo points for MVP?**
+2. **Odds source:** SportRadar odds (if included) vs your own fixed multipliers?
+3. **Payout model:** fixed multiplier vs points/leaderboard?
+4. **QR login:** real QR-based auth or just a marketing entry screen for now?
+5. **KYC:** stub upload vs integrate vendor now?
+6. **Geography:** where will this run (even if “demo only”)?
+
+If you answer those 6, dev team can execute cleanly.
+
+---
+
+If you want, paste your answers to those 6 decisions and I’ll turn this into a **one-page PRD** + a **Jira-ready task breakdown** (epics → stories → acceptance criteria) tailored to your exact MVP choice.

@@ -3,37 +3,201 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Soccer Betting App</title>
+    <title>BLITZR - Soccer Betting</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spectral:wght@400;600&display=swap" rel="stylesheet">
   </head>
   <body>
-    <main class="page">
-      <section class="card">
-        <header>
-          <p class="eyebrow">Matchday Picks</p>
-          <h1>Soccer Betting</h1>
-          <p class="subhead">Choose a fixed bet amount and submit.</p>
-        </header>
-
-        {% if message %}
-          <div class="message">{{ message }}</div>
-        {% endif %}
-
-        <form method="post" class="bet-form">
-          <label for="bet" class="label">Bet amount</label>
-          <div class="select-wrap">
-            <select id="bet" name="bet" required>
-              <option value="" disabled {% if not selected %}selected{% endif %}>Select amount</option>
-              {% for amount in allowed_bets %}
-                <option value="{{ amount }}" {% if selected == amount %}selected{% endif %}>
-                  ${{ amount }}
-                </option>
-              {% endfor %}
-            </select>
+    <div class="page">
+      <header class="site-header">
+        <div class="logo-wrap">
+          <img src="{{ url_for('static', filename='logo.png') }}" alt="BLITZR logo" class="logo">
+          <div>
+            <p class="logo-title">BLITZR</p>
+            <p class="logo-tag">World Cup match betting</p>
           </div>
-          <button type="submit">Place Bet</button>
-        </form>
-      </section>
-    </main>
+        </div>
+        <nav class="nav">
+          <a href="#matches">Matches</a>
+          <a href="#bets">Betting examples</a>
+          <a href="#start">Get started</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero" id="start">
+          <div class="hero-copy">
+            <p class="eyebrow">Soccer betting, simplified</p>
+            <h1>Pick win, lose, or draw. Stake $5 to $50. Track returns live.</h1>
+            <p class="subhead">
+              BLITZR is a World Cup focused betting hub that guides users from quick login to a clean bet slip.
+              This build includes a landing page, match cards, and example bets ready for API wiring.
+            </p>
+            <div class="cta-row">
+              <button type="button">Scan to login</button>
+              <span class="pill">KYC gate ready</span>
+            </div>
+            <div class="api-status">
+              <span class="dot"></span>
+              <span>
+                {% if api_ready %}
+                  Soccer API connected
+                {% else %}
+                  Soccer API trial ready - add key to enable live matches
+                {% endif %}
+              </span>
+            </div>
+          </div>
+          <div class="hero-panel">
+            <div class="qr-card">
+              <p class="qr-title">Scan to login</p>
+              <div class="qr-box">
+                <div class="qr-grid">
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+              <p class="qr-caption">Fast login placeholder</p>
+            </div>
+            <div class="bet-slip">
+              <p class="slip-title">Example bet slip</p>
+              <div class="slip-row">
+                <span>Rivergate FC to win</span>
+                <strong>$25</strong>
+              </div>
+              <div class="slip-row muted">
+                <span>Multiplier</span>
+                <strong>1.8x</strong>
+              </div>
+              <div class="slip-total">
+                <span>Potential return</span>
+                <strong>$45.00</strong>
+              </div>
+              <button type="button" class="ghost">Confirm bet</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="matches" id="matches">
+          <div class="section-title">
+            <h2>Upcoming matches</h2>
+            <p>Grouped by stage with sample odds. Wire to the Soccer API when the key arrives.</p>
+          </div>
+          <div class="match-grid">
+            {% for match in matches %}
+              <article class="match-card">
+                <div class="match-top">
+                  <span class="group">{{ match.group }}</span>
+                  <span class="kickoff">{{ match.kickoff }}</span>
+                </div>
+                <h3>{{ match.home }} vs {{ match.away }}</h3>
+                <div class="odds-row">
+                  <div>
+                    <p>Home</p>
+                    <strong>{{ match.odds.home }}x</strong>
+                  </div>
+                  <div>
+                    <p>Draw</p>
+                    <strong>{{ match.odds.draw }}x</strong>
+                  </div>
+                  <div>
+                    <p>Away</p>
+                    <strong>{{ match.odds.away }}x</strong>
+                  </div>
+                </div>
+                <button type="button" class="ghost">Open bet</button>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="examples" id="bets">
+          <div class="section-title">
+            <h2>Betting examples</h2>
+            <p>Fixed bet sizes keep the flow simple for MVP. Choose $5 to $50 in $5 steps.</p>
+          </div>
+          <div class="example-grid">
+            <div class="example-card">
+              <h3>Place a bet</h3>
+              {% if message %}
+                <div class="message">{{ message }}</div>
+              {% endif %}
+              <form method="post" class="bet-form">
+                <label for="bet" class="label">Bet amount</label>
+                <div class="select-wrap">
+                  <select id="bet" name="bet" required>
+                    <option value="" disabled {% if not selected %}selected{% endif %}>Select amount</option>
+                    {% for amount in allowed_bets %}
+                      <option value="{{ amount }}" {% if selected == amount %}selected{% endif %}>
+                        ${{ amount }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <button type="submit">Place bet</button>
+              </form>
+            </div>
+            <div class="example-card">
+              <h3>Open bets</h3>
+              <ul class="bet-list">
+                {% for bet in sample_bets %}
+                  <li>
+                    <div>
+                      <p class="bet-match">{{ bet.match }}</p>
+                      <p class="bet-pick">{{ bet.pick }}</p>
+                    </div>
+                    <div class="bet-meta">
+                      <span>${{ bet.stake }}</span>
+                      <span>${{ "%.2f"|format(bet.return) }}</span>
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="example-card">
+              <h3>Wallet snapshot</h3>
+              <div class="wallet">
+                <div>
+                  <p>Available balance</p>
+                  <strong>$120.00</strong>
+                </div>
+                <div>
+                  <p>Open exposure</p>
+                  <strong>$50.00</strong>
+                </div>
+              </div>
+              <div class="wallet-actions">
+                <button type="button">Deposit</button>
+                <button type="button" class="ghost">Withdraw</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="final">
+          <div class="final-card">
+            <h2>Ready for the Soccer API trial key</h2>
+            <p>
+              The backend includes a stub for API integration. Add the key as an environment variable
+              and swap the sample matches with live data and caching.
+            </p>
+            <div class="pill-row">
+              <span class="pill">Flask templates</span>
+              <span class="pill">Fixed bet amounts</span>
+              <span class="pill">KYC gate placeholder</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>BLITZR MVP build - demo only. Terms and privacy placeholders.</p>
+      </footer>
+    </div>
   </body>
 </html>
